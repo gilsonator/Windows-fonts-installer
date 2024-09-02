@@ -11,7 +11,7 @@
     Location of the font files (*.ttf) to install.
 
 .EXAMPLE
-    installFonts.ps1 -SourcePath '.\MesloLGS NF\'
+    .\installFonts.ps1 -SourcePath 'D:\Development\PowerShell\fonts\testFonts\'
 
     Searches for *.ttf files in the specified location and copies them to the Windows Font Path.
     If running in elevated mode, installs for all users.
