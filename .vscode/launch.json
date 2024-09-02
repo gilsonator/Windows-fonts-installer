@@ -8,10 +8,7 @@
             "name": "PowerShell: Launch Current File",
             "type": "PowerShell",
             "request": "launch",
-            "script": "${file}",
-            "args": [
-                "-FolderPath", "'MesloLGS NF'"
-            ]
+            "script": "${file}"
         }
     ]
 }
