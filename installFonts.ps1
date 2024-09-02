@@ -70,11 +70,12 @@ if ($confirmation -eq 'Y') {
                 Copy-Item -Path $_.FullName -Destination $FontsPath
                 Start-Sleep -Milliseconds 1000
             }
+            $output = "Operation complete, $totalFiles Fonts installed." 
         } else {
-            Write-Host "No fonts found in: $sourcePath" -ForegroundColor Blue
+            $output = "No fonts found in: $sourcePath" 
         }
-    Write-Host "Operation complete, $totalFiles Fonts installed." -ForegroundColor Blue
 } else {
-    Write-Host "Operation cancelled by user." -ForegroundColor Blue
+    $output = "Operation cancelled by user." 
 }
-Write-Host ""
+Write-Host
+Write-Host $output -ForegroundColor Blue
