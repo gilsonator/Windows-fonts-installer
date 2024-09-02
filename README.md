@@ -13,3 +13,6 @@ Searches for `*.ttf` files in the location privided in `-SourcePath` parameter, 
 * Checks if script is run in an elevated mode.
   
 If running in elevated mode, installs fonts found for all users.
+
+---
+I created this to outline my skills as part of my ongoing job search.
