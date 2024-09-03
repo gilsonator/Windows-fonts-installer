@@ -3,17 +3,21 @@
     Simple font installer.
 
 .DESCRIPTION
-    This script copies font files (*.ttf) to the relevant Windows location, based on user account or admin privileges.
+    Depending on user or admin privileges, this script copies font files (*.ttf) to the appropriate Windows directory 
+    and updates the relevant Windows Registry entries.
 
     By David Gilson
 
 .PARAMETER SourcePath
     Location of the font files (*.ttf) to install.
 
+.LINK
+    https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.management/new-itemproperty?view=powershell-7.4
+
 .EXAMPLE
     .\installFonts.ps1 -SourcePath 'D:\Development\PowerShell\fonts\testFonts\'
 
-    Searches for *.ttf files in the specified location and copies them to the Windows Font Path.
+    Searches for *.ttf files in the specified location and copies them to the relevant Windows Font Path.
     If running in elevated mode, installs for all users.
 #>
 
@@ -32,28 +36,38 @@ if ($PSVersionTable.OS -notlike "*Windows*") {
 
 $sourcePath = New-Object System.IO.DirectoryInfo($SourcePath) | ForEach-Object { $_.FullName }
 
-# Check if running as admin and set the appropriate fonts path
-$isAdmin = ([Security.Principal.WindowsPrincipal] `
-     [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-# TODO: DEV
-# $isAdmin = $true
-
-$FontsPath = if ($isAdmin) {
-    [System.Environment]::GetFolderPath('Fonts')
-} else {
-    $("$env:LOCALAPPDATA\Microsoft\Windows\Fonts")
+$FontRegistryPathMap = @{
+    CurrentUser = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+    AllUsers    = 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
 }
 
-$($isAdmin ? $(Write-Host -ForegroundColor Red “NOTE: Running in elevated mode will install for all users!”) : "" )
+$FontFolderPathMap = @{
+    CurrentUser = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
+    AllUsers    = "$($env:windir)\Fonts" # [System.Environment]::GetFolderPath('Fonts')
+}
+
+# Check if running as admin
+# one way:
+# $isAdmin = ([Security.Principal.WindowsPrincipal] `
+#     [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# better way:
+$principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+$isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+# TODO: Setup testing for DEV
+# $isAdmin = $true
+
+$fontsPath = if ($isAdmin) { $FontFolderPathMap.AllUsers } else { $FontFolderPathMap.CurrentUser }
+
+if ($isAdmin) { $(Write-Host -ForegroundColor Red “NOTE: Running in elevated mode will install for all users!”) }
 
 # TODO: Dev
-#$FontsPath = "D:\Development\tmp"
+#$fontsPath = "D:\Development\tmp"
 
 Write-Host "Do you want to install font files from: " -NoNewline
 Write-Host "`"$sourcePath`"" -ForegroundColor Yellow -NoNewline
 Write-Host " to: " -NoNewline
-Write-Host "`"$FontsPath`"" -ForegroundColor Yellow -NoNewline
+Write-Host "`"$fontsPath`"" -ForegroundColor Yellow -NoNewline
 Write-Host "? (Y/N): " -NoNewline
 $confirmation = Read-Host
 
@@ -66,8 +80,22 @@ if ($confirmation -eq 'Y') {
             $fontFiles | ForEach-Object {
                 $currentFile++
                 $percentComplete = ($currentFile / $totalFiles) * 100
-                Write-Progress -Activity "Copying Fonts" -Status "Copying $($_.Name)" -PercentComplete $percentComplete
-                Copy-Item -Path $_.FullName -Destination $FontsPath
+                Write-Progress -Activity "Installing Fonts" -Status "Installing $($_.Name)" -PercentComplete $percentComplete
+                Copy-Item -Path $_.FullName -Destination $fontsPath
+
+                # if admin then just fileName else path to users font path
+                $regValue = if ($isAdmin) { $fontFileName } else { $fontsPath }
+                $regPath  = if ($isAdmin) { $FontRegistryPathMap.AllUsers } else { $FontRegistryPathMap.CurrentUser }
+                $params = @{
+                    Name         = 'TrueType Font'
+                    Path         = $regPath
+                    PropertyType = 'string'
+                    Value        = $regValue
+                    Force        = $true
+                    ErrorAction  = 'Stop'
+                }
+                $tmp = New-ItemProperty @params
+
                 Start-Sleep -Milliseconds 1000
             }
             $output = "Operation complete, $totalFiles Fonts installed." 
