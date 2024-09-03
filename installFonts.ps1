@@ -36,12 +36,12 @@ if ($PSVersionTable.OS -notlike "*Windows*") {
 
 $sourcePath = New-Object System.IO.DirectoryInfo($SourcePath) | ForEach-Object { $_.FullName }
 
-$FontRegistryPathMap = @{
+$FontRegistryPathHash = @{
     CurrentUser = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
     AllUsers    = 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
 }
 
-$FontFolderPathMap = @{
+$FontFolderPathHash = @{
     CurrentUser = "$env:LOCALAPPDATA\Microsoft\Windows\Fonts"
     AllUsers    = "$($env:windir)\Fonts" # [System.Environment]::GetFolderPath('Fonts')
 }
@@ -57,7 +57,7 @@ $isAdmin = $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administ
 # TODO: Setup testing for DEV
 # $isAdmin = $true
 
-$fontsPath = if ($isAdmin) { $FontFolderPathMap.AllUsers } else { $FontFolderPathMap.CurrentUser }
+$fontsPath = if ($isAdmin) { $FontFolderPathHash.AllUsers } else { $FontFolderPathHash.CurrentUser }
 
 if ($isAdmin) { $(Write-Host -ForegroundColor Red “NOTE: Running in elevated mode will install for all users!”) }
 
@@ -85,7 +85,7 @@ if ($confirmation -eq 'Y') {
 
                 # if admin then just fileName else path to users font path
                 $regValue = if ($isAdmin) { $fontFileName } else { $fontsPath }
-                $regPath  = if ($isAdmin) { $FontRegistryPathMap.AllUsers } else { $FontRegistryPathMap.CurrentUser }
+                $regPath  = if ($isAdmin) { $FontRegistryPathHash.AllUsers } else { $FontRegistryPathHash.CurrentUser }
                 $params = @{
                     Name         = 'TrueType Font'
                     Path         = $regPath
