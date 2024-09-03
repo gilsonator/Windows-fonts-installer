@@ -1,6 +1,6 @@
 # Simple Windows Font Installer.
 
-This script copies font files `(*.ttf)` to the relevant Windows location, either user's Fonts folder, or the System Fonts folder.
+Depending on user or admin privileges, this script copies font files (*.ttf) to the appropriate Windows directory and updates the relevant Windows Registry entries.
 
 ## Example
 ```PowerShell
